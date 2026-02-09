@@ -1,0 +1,5 @@
+{
+  "name": "ObraControl - Presupuesto Residencial",
+  "description": "Aplicación prototipo para el control y seguimiento de presupuestos de obra residencial, con gestión de gastos, alertas de desviación y análisis por categorías.",
+  "requestFramePermissions": []
+}
