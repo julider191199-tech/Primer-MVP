@@ -31,7 +31,6 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       try {
         if (!supabase) {
           console.warn('Supabase no configurado: omitiendo carga de datos inicial.');
-          // Si no hay Supabase, dejamos los valores iniciales y quitamos loading
           return;
         }
         await Promise.all([fetchBudgetConfig(), fetchExpenses()]);
@@ -49,7 +48,10 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const fetchBudgetConfig = async () => {
     if (!supabase) return;
     const { data, error } = await supabase.from('categorias').select('*');
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetchBudgetConfig:', error);
+      throw error;
+    }
 
     if (data) {
       const newConfig: BudgetConfig = { ...INITIAL_BUDGET };
@@ -71,7 +73,10 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       .select('*')
       .order('fecha', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetchExpenses:', error);
+      throw error;
+    }
 
     if (data) {
       const formattedExpenses: Expense[] = data.map((row: DBExpense) => {
@@ -135,6 +140,8 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         descripcion: descripcionFinal.trim()
     };
 
+    console.log('Intentando guardar gasto:', dbPayload); // Debug
+
     const { data, error } = await supabase
         .from('gastos')
         .insert([dbPayload])
@@ -142,14 +149,15 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     if (error) {
         console.error("Error guardando gasto:", error);
-        alert("Error al guardar en Supabase");
+        alert(`Error al guardar en Supabase: ${error.message}`);
         return;
     }
 
     // Actualizar estado local para que la UI responda rápido
     if (data) {
-        // Recargamos todo para asegurar consistencia o agregamos manualmente
-        fetchExpenses(); 
+        console.log('Gasto guardado exitosamente:', data); // Debug
+        // Recargamos todo para asegurar consistencia
+        await fetchExpenses(); 
     }
   };
 
@@ -168,6 +176,8 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         { nombre: Category.IMPREVISTOS, presupuesto: config.unforeseen },
     ];
 
+    console.log('Intentando actualizar presupuesto:', updates); // Debug
+
     // Upsert (Insertar o Actualizar) en Supabase
     // Requiere que la columna 'nombre' sea UNIQUE en tu tabla 'categorias'
     const { error } = await supabase
@@ -176,10 +186,11 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     if (error) {
         console.error("Error actualizando presupuesto:", error);
-        alert("Error al actualizar configuración");
+        alert(`Error al actualizar configuración: ${error.message}`);
         return;
     }
 
+    console.log('Presupuesto actualizado exitosamente'); // Debug
     setBudgetConfig(config);
   };
 
